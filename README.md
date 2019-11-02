@@ -26,7 +26,7 @@ such.define("pinyin", ["assert", "error", "pinyinlite"], function(assert, error,
 })
 
 // 模块的使用
-such.use(["pinyin"}, function(pinyin) {
+such.use(["pinyin"], function(pinyin) {
   var str = "不见南师久，谩说北群空。";
   
   console.log(pinyin.convertToPinyinString(str));
