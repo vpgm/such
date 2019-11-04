@@ -2,7 +2,7 @@
  * @Author: gleeman
  * @Date: 2019-08-17 01:34:15
  * @LastEditors: gleeman
- * @LastEditTime: 2019-11-02 14:33:40
+ * @LastEditTime: 2019-11-04 23:25:55
  * @Description: 字符串方法扩展
  */
 
@@ -147,68 +147,59 @@ such.define("string", ["assert", "error", "object"], function(
         var value = flag ? e(item.value) : item.value;
         params.push(key + "=" + value);
       });
-      return params.join('&');
+      return params.join("&");
     },
     // 字符串编码转为unicode编码
+    // todo: 优化判断
     enUnicode: function(str) {
       var ret = "";
       if (!assert.isString(str)) {
         return ret;
       }
-      for (var i = 0; i < str.length; i++) {
-        ret += "\\u" + ("0000" + str.charCodeAt(i).toString(16)).slice(-4);
-      }
+      ret = str.replace(/(\\u[\da-f]{4}|[\s\S])/g, function(m) {
+        return m.length > 1
+          ? m
+          : "\\u" + ("0000" + m.charCodeAt(0).toString(16)).slice(-4);
+      });
       return ret;
     },
     // unicode编码转为字符串编码
+    // todo: 优化判断
     deUnicode: function(str) {
       var ret = "";
       if (!assert.isString(str)) {
         return ret;
       }
-      var strArray = str.split("\\u");
-      // 防止\u开头或结尾，导致解析空串产生的“□”的结果
-      if (str.startsWith("\\u")) {
-        strArray = strArray.slice(1, strArray.length);
-      }
-      if (str.endsWith("\\u")) {
-        strArray = strArray.slice(0, strArray.length - 1);
-      }
-      for (var i = 0; i < strArray.length; i++) {
-        ret += String.fromCharCode(parseInt(strArray[i], 16));
-      }
-      return ret;
-    },
-    // 字符串加密 (escape)
-    encode: function(str) {
-      var ret = "",
-        char;
-      if (!assert.isString(str)) {
-        return ret;
-      }
-      for (var i = 0; i < str.length; i++) {
-        char = str.charAt(i);
-        ret += /[a-zA-Z\d]/.test(char) ? char : this.enUnicode(char);
-      }
-      ret = ret.replace(/\\u([a-zA-Z\d]{4})/g, function(_, match) {
-        match = match.replace(/[a-z]/g, function(mt) {
-          return Math.random() >= 0.5 ? mt.toUpperCase() : mt;
-        });
-        return "%u" + match;
+      ret = str.replace(/(\\u[\da-f]{4}|[\s\S])/g, function(m) {
+        return m.length < 4
+          ? m
+          : String.fromCharCode(parseInt(m.replace(/^\\u/, ""), 16));
       });
       return ret;
     },
-    // 字符串解密 (unescape)
-    decode: function(str) {
-      var ret = "",
-        self = this;
-      if (!assert.isString(str)) {
-        return ret;
+    // 字符串加密
+    encode: function(data) {
+      try {
+        var str = assert.isString(data) ? data : JSON.stringify(data);
+        return this.enUnicode(str);
+      } catch (e) {
+        return "";
       }
-      ret = str.replace(/%u([a-zA-Z\d]{4})/g, function(_, match) {
-        return self.deUnicode("\\u" + match.toLowerCase());
-      });
-      return ret;
+    },
+    // 字符串解密 flag: str是对象类型数据时是否直接返回
+    decode: function(str, flag) {
+      if (str instanceof Object) {
+        if (flag) return str;
+        str = JSON.stringify(str);
+      }
+      try {
+        return JSON.parse(this.deUnicode(str));
+      } catch (e1) {
+        try {
+          return eval("(" + this.deUnicode(str) + ")");
+        } catch (e2) {}
+      }
+      return {};
     },
     // 判断一个字符由两个字节还是由四个字节组成
     is32Bit: function(char) {

@@ -2,7 +2,7 @@
  * @Author: gleeman
  * @Date: 2019-10-13 15:51:44
  * @LastEditors: gleeman
- * @LastEditTime: 2019-11-02 22:49:35
+ * @LastEditTime: 2019-11-04 20:39:59
  * @Description:
  */
 
@@ -120,17 +120,17 @@ such.define("event", ["assert"], function(assert) {
 
       return manager;
     },
-    // 触发自定义事件
+    // 触发自定义事件 IE <= 8 不支持自定义事件，但支持dom0级事件
     dispatchEvent: function(element, event, data) {
       if (document.dispatchEvent) {
         var evt;
-        if (!assert.isUndefined(CustomEvent)) {
+        try {
           evt = new CustomEvent(event, {
             detail: {
               data: data
             }
           });
-        } else {
+        } catch (e) {
           evt = document.createEvent("HTMLEvents");
           evt.initEvent(event, true, true);
           !evt.detail && (evt.detail = {});
@@ -138,11 +138,13 @@ such.define("event", ["assert"], function(assert) {
         }
         return element.dispatchEvent(evt);
       } else if (document.createEventObject) {
-        // IE浏览器支持fireEvent方法
-        var evt = document.createEventObject();
-        !evt.detail && (evt.detail = {});
-        evt.detail.data = data;
-        return element.fireEvent("on" + event, evt);
+        try {
+           // IE浏览器支持fireEvent方法 ()
+          var evt = document.createEventObject();
+          !evt.detail && (evt.detail = {});
+          evt.detail.data = data;
+          return element.fireEvent("on" + event);
+        } catch(e) {}
       }
     },
     // 触发键盘事件

@@ -2,7 +2,7 @@
  * @Author: gleeman
  * @Date: 2019-07-13 22:24:23
  * @LastEditors: gleeman
- * @LastEditTime: 2019-11-02 20:27:34
+ * @LastEditTime: 2019-11-04 22:11:47
  * @Description: such 1.0
  */
 
@@ -242,24 +242,21 @@
   }
 
   // 对象继承
-  Such.prototype["extends"] = function(
-    SuperClass,
-    ownPropertiesAssign,
-    prototypeAssign
-  ) {
+  Such.prototype.inherit = function(SuperClass, properties, prototype) {
     if (typeof SuperClass !== "function") {
       throw new Error('"SuperClass" must be a function');
     }
-    var _such = this;
+    var instance = this;
 
     function SubClass() {
       SuperClass.apply(this, arguments);
-      _such.apply(this, ownPropertiesAssign);
+      instance.assign(this, properties);
     }
+
     // 原型继承
     inheritParasitism(SubClass, SuperClass);
     // 原型扩展
-    _such.apply(SubClass.prototype, prototypeAssign);
+    instance.assign(SubClass.prototype, prototype);
 
     return SubClass;
   };
@@ -279,7 +276,7 @@
   }
 
   // 对象扩展
-  Such.prototype.apply = function(target) {
+  Such.prototype.assign = function(target) {
     if (!(target instanceof Object)) {
       target = {};
     }
