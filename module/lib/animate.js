@@ -2,11 +2,16 @@
  * @Author: gleeman
  * @Date: 2019-08-17 01:34:15
  * @LastEditors: gleeman
- * @LastEditTime: 2019-09-14 17:10:38
- * @Description:
+ * @LastEditTime: 2019-11-17 16:24:16
+ * @Description: 支持尺寸、透明度、颜色(浏览器必须支持rgba模式)等属性渐变
  */
 
-such.define("animate", function() {
+such.define("animate", ["assert", "error", "string", "color"], function(
+  assert,
+  error,
+  string,
+  color
+) {
   "use strict";
 
   /*
@@ -185,49 +190,156 @@ such.define("animate", function() {
     }
   };
 
+  var getStyleValue = function(dom, propertyName) {
+    var ret = null;
+    if (!dom || dom.nodeType !== 1) {
+      error.error('"dom" must be a element.');
+    }
+    if (!assert.isString(propertyName)) {
+      error.type('"propertyName" must be a string.');
+    }
+    if (dom.currentStyle) {
+      ret = dom.currentStyle[propertyName];
+    } else {
+      ret = document.defaultView.getComputedStyle(dom, null)[propertyName];
+    }
+    if (ret === undefined) {
+      if (propertyName === "opacity") {
+        ret = 1;
+      } else if (propertyName.match(/width|height|left|right|top|bottom/)) {
+        try {
+          ret = dom.getBoundingClientRect()[propertyName];
+        } catch (e) {}
+      }
+    }
+    return ret;
+  };
+
   var Animate = function(dom) {
+    if (!dom || dom.nodeType !== 1) {
+      error.error('"dom" must be a element.');
+    }
     this.dom = dom;
     this.startTime = 0;
     this.startPos = 0;
     this.endPos = 0;
-    this.propertyName = null;
-    this.easing = null;
-    this.duration = null;
+    this.propertyName = "";
+    this.propertyUnit = "";
+    this.isColor = false;
+    this.startRgba = null;
+    this.endRgba = null;
+    this.easing = tween["linear"];
+    this.duration = 500;
+    this.animateQueue = [];
   };
+
+  Animate.tween = (function() {
+    var arr = [];
+    for (var key in tween) {
+      if (tween.hasOwnProperty(key)) {
+        arr.push(key);
+      }
+    }
+    return arr;
+  })();
 
   Animate.prototype.start = function(propertyName, endPos, duration, easing) {
     this.startTime = +new Date();
-    this.startPos = this.dom.getBoundingClientRect()[propertyName];
-    this.propertyName = propertyName;
-    this.endPos = endPos;
-    this.duration = duration;
-    this.easing = tween[easing];
-
+    this.propertyName = string.camelCase(propertyName || "");
+    this.propertyUnit = "";
+    this.startPos = getStyleValue(this.dom, this.propertyName);
+    this.startRgba = color.toRGBA(this.startPos);
+    this.endRgba = color.toRGBA(endPos);
+    this.isColor =
+      this.startRgba.mode !== "UNKNOWN" || this.endRgba.mode !== "UNKNOWN";
+    if (!this.isColor) {
+      if (
+        assert.isString(this.startPos) &&
+        this.startPos.match(/^\d+(?:\.\d+)?([^\d]+)$/)
+      ) {
+        this.propertyUnit = RegExp.$1;
+      } else if (
+        assert.isString(endPos) &&
+        endPos.match(/^\d+(?:\.\d+)?([^\d]+)$/)
+      ) {
+        this.propertyUnit = RegExp.$1;
+      }
+      this.startPos = parseFloat(this.startPos);
+      this.endPos = parseFloat(endPos);
+      this.startRgba = null;
+      this.endRgba = null;
+    }
+    this.duration = duration ? duration : 500;
+    this.easing = easing && tween[easing] ? tween[easing] : tween["linear"];
     var self = this;
     var timeId = setInterval(function() {
-      if (self.step() === false) {
+      if (self._step() === false) {
         clearInterval(timeId);
+        var next = null;
+        while ((next = self.animateQueue.shift())) {
+          next && next();
+        }
       }
-    }, 19);
+    }, 16);
+    return this;
   };
 
-  Animate.prototype.step = function() {
+  Animate.prototype._step = function() {
     var t = +new Date();
     if (t >= this.startTime + this.duration) {
       this.update(this.endPos);
       return false;
     }
-    var pos = this.easing(
-      t - this.startTime,
-      this.startPos,
-      this.endPos - this.startPos,
-      this.duration
-    );
-    this.update(pos);
+    if (!this.isColor) {
+      var pos = this.easing(
+        t - this.startTime,
+        this.startPos,
+        this.endPos - this.startPos,
+        this.duration
+      );
+      this.update(pos);
+    } else {
+      var r = this.easing(
+        t - this.startTime,
+        this.startRgba.r,
+        this.endRgba.r - this.startRgba.r,
+        this.duration
+      );
+      var g = this.easing(
+        t - this.startTime,
+        this.startRgba.g,
+        this.endRgba.g - this.startRgba.g,
+        this.duration
+      );
+      var b = this.easing(
+        t - this.startTime,
+        this.startRgba.b,
+        this.endRgba.b - this.startRgba.b,
+        this.duration
+      );
+      var a = this.easing(
+        t - this.startTime,
+        this.startRgba.a,
+        this.endRgba.a - this.startRgba.a,
+        this.duration
+      );
+      var newRGBA = color.rgba2RGBA(r, g, b, a);
+      r = newRGBA.r;
+      g = newRGBA.g;
+      b = newRGBA.b;
+      a = newRGBA.a;
+      this.update(["rgba(", [r, g, b, a].join(","), ")"].join(""));
+    }
   };
 
   Animate.prototype.update = function(pos) {
-    this.dom.style[this.propertyName] = pos + "px";
+    this.dom.style[this.propertyName] = pos + this.propertyUnit;
+  };
+
+  Animate.prototype.next = function(propertyName, endPos, duration, easing) {
+    var fn = this.start.bind(this, propertyName, endPos, duration, easing);
+    this.animateQueue.push(fn);
+    return this;
   };
 
   return Animate;

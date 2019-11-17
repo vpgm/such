@@ -2,7 +2,7 @@
  * @Author: gleeman
  * @Date: 2019-07-13 22:24:23
  * @LastEditors: gleeman
- * @LastEditTime: 2019-11-04 22:11:47
+ * @LastEditTime: 2019-11-17 13:15:37
  * @Description: such 1.0
  */
 
@@ -26,6 +26,7 @@
     animate: "lib/animate",
     browser: "lib/browser",
     calendar: "lib/calendar",
+    color: "lib/color",
     cookie: "lib/cookie",
     event: "lib/event",
     "event-emitter": "lib/event-emitter",
@@ -75,7 +76,12 @@
     var args = [].slice.call(arguments),
       factory = args.pop(),
       len = args.length,
-      dependencies = len && args[len - 1] instanceof Array ? args.pop() : [],
+      dependencies =
+        len && args[len - 1] instanceof Array
+          ? args.pop()
+          : len === 2
+          ? [args.pop()]
+          : [],
       moduleName = args.pop();
     typeof factory !== "function" && (factory = function() {});
     if (!moduleCache[moduleName]) {

@@ -2,8 +2,8 @@
  * @Author: gleeman
  * @Date: 2019-08-17 01:34:15
  * @LastEditors: gleeman
- * @LastEditTime: 2019-09-14 17:53:01
- * @Description:
+ * @LastEditTime: 2019-11-17 18:48:11
+ * @Description: todo: 优化
  */
 
 such.define("uploader", function() {
