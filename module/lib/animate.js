@@ -336,6 +336,12 @@ such.define("animate", ["assert", "error", "string", "color"], function(
     this.dom.style[this.propertyName] = pos + this.propertyUnit;
   };
 
+  Animate.prototype.sameTime = function(propertyName, endPos, duration, easing) {
+    var animate = new Animate(this.dom);
+    animate.start(propertyName, endPos, duration, easing);
+    return this;
+  }
+
   Animate.prototype.next = function(propertyName, endPos, duration, easing) {
     var fn = this.start.bind(this, propertyName, endPos, duration, easing);
     this.animateQueue.push(fn);

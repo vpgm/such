@@ -13,7 +13,7 @@
 
 such.define("browser", ["assert"], function(assert) {
   "use strict";
-  
+
   // 缓存正则
   var cacheRegExp = {};
   // 内部工具方法
@@ -288,7 +288,7 @@ such.define("browser", ["assert"], function(assert) {
         } else {
           ret.name = "Opera";
           ret.version =
-            operaV0 || (operaV3 && operaV3[1]) || (operaV2[1] || operaV1[1]);
+            operaV0 || (operaV3 && operaV3[1]) || operaV2[1] || operaV1[1];
         }
       }
 
