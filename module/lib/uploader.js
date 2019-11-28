@@ -9,7 +9,7 @@
 such.define("uploader", ["assert", "error"], function(assert, error) {
   "use strict";
 
-  var noon = function() {};
+  var noop = function() {};
   var invalidTypeArray = [
     "F_EXCEED_NUM",
     "F_EXCEED_SIZE",
@@ -69,13 +69,13 @@ such.define("uploader", ["assert", "error"], function(assert, error) {
     this.records = [];
     this.timer = null;
     this.actions = {
-      validator: noon,
-      beforeUpload: noon,
-      progress: noon,
-      error: noon,
-      complete: noon,
-      timeout: noon,
-      change: noon
+      validator: noop,
+      beforeUpload: noop,
+      progress: noop,
+      error: noop,
+      complete: noop,
+      timeout: noop,
+      change: noop
     };
   }
 
