@@ -5,8 +5,11 @@ A lightweight, flexible, modular-based framework.
 
 // 全局配置
 such.config({
+  keepAlive: true, // 模块加载后script元素保留
   dir: "./static/such/", // such核心模块路径
-  base: "./static/expand/" // 扩展模块路径
+  expandDir: "./static/expand/", // 扩展模块路径
+  version: true, // script元素添加版本号
+  v: "1.1.0" // 版本号
 })
 
 // 如何定义一个模块
